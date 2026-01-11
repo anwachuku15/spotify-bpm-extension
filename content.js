@@ -9,9 +9,10 @@
       'div[data-testid="now-playing-widget"] a[href*="/track/"]'
     ],
     artist: [
+      'a[data-testid="context-item-info-artist"]',
       'div[data-testid="now-playing-widget"] span a[href*="/artist/"]'
     ],
-    playerBar: 'footer'
+    nowPlayingBar: ['footer', 'aside[data-testid="now-playing-bar"]']
   };
 
   function findFirst(selectors) {
@@ -34,8 +35,8 @@
 
   function injectBPMUI() {
     if (bpmContainer) return bpmContainer;
-    const playerBar = document.querySelector(SELECTORS.playerBar);
-    if (!playerBar) return null;
+    const nowPlayingBar = document.querySelector(SELECTORS.nowPlayingBar);
+    if (!nowPlayingBar) return null;
 
     bpmContainer = document.createElement('div');
     bpmContainer.style.marginLeft = '12px';
@@ -47,7 +48,7 @@
          style="margin-left:6px;color:#b3b3b3;text-decoration:none;">
         GetSongBPM
       </a>`;
-    playerBar.appendChild(bpmContainer);
+    nowPlayingBar.appendChild(bpmContainer);
     return bpmContainer;
   }
 
