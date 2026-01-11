@@ -1,5 +1,3 @@
-
-const API_KEY = 'REPLACE_WITH_YOUR_GETSONGBPM_API_KEY';
 const API_URL = 'https://api.getsongbpm.com/search/';
 const CACHE_TTL = 1000 * 60 * 60 * 24 * 30;
 
@@ -12,38 +10,59 @@ function normalize(str) {
     .trim();
 }
 
-function keyFor(a, t) {
-  return `${normalize(a)}|${normalize(t)}`;
+function keyFor(artist, title) {
+  return `${normalize(artist)}|${normalize(title)}`;
+}
+
+async function getApiKey() {
+  const data = await chrome.storage.local.get('GETSONGBPM_API_KEY');
+  return data.GETSONGBPM_API_KEY || null;
 }
 
 chrome.runtime.onMessage.addListener((msg, _, sendResponse) => {
   if (msg.type !== 'FETCH_BPM') return;
 
   (async () => {
+    const apiKey = await getApiKey();
+    if (!apiKey) {
+      sendResponse({ bpm: null });
+      return;
+    }
+
     const { artist, title } = msg.track;
     const key = keyFor(artist, title);
-    const stored = await chrome.storage.local.get(key);
-    if (stored[key] && Date.now() - stored[key].ts < CACHE_TTL) {
-      sendResponse({ bpm: stored[key].bpm });
+
+    const cached = await chrome.storage.local.get(key);
+    if (cached[key] && Date.now() - cached[key].ts < CACHE_TTL) {
+      sendResponse({ bpm: cached[key].bpm });
       return;
     }
 
     const params = new URLSearchParams({
-      api_key: API_KEY,
+      api_key: apiKey,
       type: 'track',
       lookup: 'song',
       artist,
       song_title: title
     });
 
-    const res = await fetch(`${API_URL}?${params}`);
-    const json = await res.json();
-    const bpm = json?.search?.[0]?.tempo || null;
+    try {
+      const res = await fetch(`${API_URL}?${params}`);
+      if (!res.ok) throw new Error('API error');
 
-    if (bpm) {
-      await chrome.storage.local.set({ [key]: { bpm, ts: Date.now() } });
+      const json = await res.json();
+      const bpm = json?.search?.[0]?.tempo || null;
+
+      if (bpm) {
+        await chrome.storage.local.set({
+          [key]: { bpm, ts: Date.now() }
+        });
+      }
+
+      sendResponse({ bpm });
+    } catch {
+      sendResponse({ bpm: null });
     }
-    sendResponse({ bpm });
   })();
 
   return true;
