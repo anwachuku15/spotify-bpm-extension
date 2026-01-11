@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "Spotify BPM Display",
+  "description": "Displays song tempo (BPM) directly in Spotify Web Player. BPM data provided by GetSongBPM.com.",
+  "version": "1.0.0",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://open.spotify.com/*",
+    "https://api.getsongbpm.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://open.spotify.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  }
+}
